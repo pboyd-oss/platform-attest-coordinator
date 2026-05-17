@@ -4,5 +4,6 @@ resources:
   - rbac.yaml
   - service.yaml
   - deployment.yaml
+  - httproute.yaml
   - attest-webhook-sealedsecret.yaml
   - jenkins-operator-credentials-sealedsecret.yaml
