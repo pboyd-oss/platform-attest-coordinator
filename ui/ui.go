@@ -23,13 +23,18 @@ type Handler struct {
 
 func NewHandler(coord coordinatorReader) *Handler {
 	fm := template.FuncMap{
-		"age":     fmtAge,
-		"missing": missingEvidence,
-		"urlenc":  url.QueryEscape,
-		"css":     outcomeCSS,
-		"label":   outcomeLabel,
-		"ts":      fmtTS,
-		"commit":  shortCommit,
+		"age":      fmtAge,
+		"missing":  missingEvidence,
+		"buildhref": func(jobPath string, buildNum int) template.URL {
+			return template.URL("/builds?key=" + url.QueryEscape(fmt.Sprintf("%s#%d", jobPath, buildNum)))
+		},
+		"keyhref": func(key string) template.URL {
+			return template.URL("/builds?key=" + url.QueryEscape(key))
+		},
+		"css":    outcomeCSS,
+		"label":  outcomeLabel,
+		"ts":     fmtTS,
+		"commit": shortCommit,
 	}
 	tmpl := template.Must(template.New("root").Funcs(fm).Parse(tmplDashboard + tmplDetail))
 	return &Handler{coord: coord, tmpl: tmpl}
@@ -218,7 +223,7 @@ code{font-family:ui-monospace,monospace;font-size:12px;color:#8b949e}
 <tr><th>Build</th><th>Branch</th><th>Evidence</th><th>Age</th></tr>
 {{range .Active}}
 <tr>
-<td class="job"><a href="/builds?key={{urlenc (printf "%s#%d" .JobPath .BuildNumber)}}">{{.JobPath}} #{{.BuildNumber}}</a></td>
+<td class="job"><a href="{{buildhref .JobPath .BuildNumber}}">{{.JobPath}} #{{.BuildNumber}}</a></td>
 <td class="muted">{{.Branch}}</td>
 <td class="pending">{{missing .}}</td>
 <td class="muted">{{age .ReceivedAt}}</td>
@@ -234,7 +239,7 @@ code{font-family:ui-monospace,monospace;font-size:12px;color:#8b949e}
 {{range .Decisions}}
 <tr>
 <td><span class="badge {{css .Outcome}}">{{label .Outcome}}</span></td>
-<td class="job"><a href="/builds?key={{urlenc .Key}}">{{.JobPath}} #{{.BuildNumber}}</a></td>
+<td class="job"><a href="{{keyhref .Key}}">{{.JobPath}} #{{.BuildNumber}}</a></td>
 <td class="muted">{{.Branch}}</td>
 <td{{if ne .Outcome "ATTESTED"}} class="reason"{{end}}>{{.Reason}}</td>
 <td class="muted">{{age .DecidedAt}}</td>
