@@ -3,16 +3,11 @@ kind: HTTPRoute
 metadata:
   name: platform-attest-coordinator
   namespace: platform
-  labels:
-    external-dns: "true"
-  annotations:
-    external-dns.alpha.kubernetes.io/target: tuxgrid.com
 spec:
   parentRefs:
   - kind: Gateway
-    name: gateway-external
+    name: gateway-internal
     namespace: gateway
-    sectionName: https
   hostnames:
   - attest.tuxgrid.com
   rules:
