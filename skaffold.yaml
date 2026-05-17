@@ -1,0 +1,17 @@
+apiVersion: skaffold/v4beta11
+kind: Config
+build:
+  artifacts:
+    - image: harbor.tuxgrid.com/platform/attest-coordinator
+manifests:
+  kustomize:
+    paths:
+      - k8s/
+deploy:
+  kubectl: {}
+profiles:
+  - name: dev
+    manifests:
+      kustomize:
+        paths:
+          - k8s/
