@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: platform-attest-coordinator
+  namespace: platform
+spec:
+  selector:
+    app: platform-attest-coordinator
+  ports:
+    - name: http
+      port: 8080
+      targetPort: 8080

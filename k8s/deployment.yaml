@@ -1,0 +1,80 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: platform-attest-coordinator
+  namespace: platform
+  labels:
+    app: platform-attest-coordinator
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: platform-attest-coordinator
+  template:
+    metadata:
+      labels:
+        app: platform-attest-coordinator
+    spec:
+      imagePullSecrets:
+        - name: harbor-docker-pull
+      serviceAccountName: platform-attest-coordinator
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65534
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: attest-coordinator
+          image: harbor.tuxgrid.com/platform/attest-coordinator:latest
+          imagePullPolicy: Always
+          ports:
+            - name: http
+              containerPort: 8080
+          env:
+            - name: JENKINS_URL
+              value: "http://jenkins-operator-http-jenkins.jenkins.svc.cluster.local:8080"
+            - name: JENKINS_USER
+              valueFrom:
+                secretKeyRef:
+                  name: jenkins-operator-credentials-jenkins
+                  key: user
+            - name: JENKINS_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: jenkins-operator-credentials-jenkins
+                  key: token
+            - name: AUDIT_SERVICE_URL
+              value: "http://platform-audit-service.platform.svc.cluster.local:8080"
+            - name: CEDAR_SERVICE_URL
+              value: "http://platform-cedar-sidecar.platform.svc.cluster.local:8080"
+            - name: WEBHOOK_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: attest-webhook-secret
+                  key: token
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 15
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+            initialDelaySeconds: 3
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 50m
+              memory: 32Mi
+            limits:
+              cpu: 200m
+              memory: 128Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: [ALL]
