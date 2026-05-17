@@ -14,7 +14,7 @@ spec:
     namespace: gateway
     sectionName: https
   hostnames:
-  - attest.platform.tuxgrid.com
+  - attest.tuxgrid.com
   rules:
   - backendRefs:
     - name: platform-attest-coordinator
