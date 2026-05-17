@@ -100,6 +100,40 @@ go test ./coordinator/
 
 All state machine logic is covered. To add a new attestation rule, add a Cedar policy in `platform-cedar/policies/attest-gate.cedar` and a test in `coordinator/coordinator_test.go` that verifies the coordinator reaches Cedar with the right context.
 
+## Local deploy (bypassing Jenkins)
+
+The `platform` namespace has a Kyverno `require-signed-platform-images` policy (Enforce mode) that blocks unsigned images. Manually pushed images need to be cosign-signed before deployment.
+
+**Build and sign workflow:**
+
+```bash
+# Extract cosign key (password is empty — the pipeline uses COSIGN_PASSWORD="")
+kubectl get secret cosign-key -n jenkins -o jsonpath='{.data.cosign\.key}' | base64 -d > /tmp/cosign.key
+
+# Build for linux/amd64 (cluster arch — easy to forget on Apple Silicon)
+docker build --platform linux/amd64 -t harbor.tuxgrid.com/platform/attest-coordinator:latest .
+docker push harbor.tuxgrid.com/platform/attest-coordinator:latest
+# Note the digest from the push output
+
+# Sign with cosign (disable tlog — Kyverno policy has ignoreTlog:true)
+DIGEST=sha256:<from push output>
+COSIGN_PASSWORD="" COSIGN_VERBOSE=1 cosign sign \
+  --key /tmp/cosign.key \
+  --tlog-upload=false \
+  --use-signing-config=false \
+  --new-bundle-format=false \
+  --yes \
+  harbor.tuxgrid.com/platform/attest-coordinator@${DIGEST}
+
+# Deploy using the explicit digest (not :latest — Kyverno caches tag resolution
+# and will keep pinning :latest to the old signed digest from Jenkins)
+kubectl set image deployment/platform-attest-coordinator -n platform \
+  attest-coordinator=harbor.tuxgrid.com/platform/attest-coordinator@${DIGEST}
+kubectl rollout status deployment/platform-attest-coordinator -n platform
+```
+
+**Why not just `kubectl rollout restart`?** Kyverno has `useCache:true` on the `latest` tag — it pins to the last signed digest it resolved and won't re-resolve until the cache expires. Using an explicit digest sidesteps the cache entirely.
+
 ## Environment variables
 
 | Variable | Default | Purpose |
