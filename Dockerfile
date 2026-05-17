@@ -3,7 +3,9 @@ WORKDIR /src
 COPY go.mod .
 RUN go mod download
 COPY . .
-RUN CGO_ENABLED=0 go build -trimpath -o /attest-coordinator .
+RUN CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o /attest-coordinator . && \
+    go clean -cache && \
+    rm -rf /go/pkg/
 
 FROM scratch
 COPY --from=build /attest-coordinator /attest-coordinator
