@@ -48,7 +48,7 @@ spec:
             - name: AUDIT_SERVICE_URL
               value: "http://platform-audit-service.platform.svc.cluster.local:8080"
             - name: CEDAR_SERVICE_URL
-              value: "http://platform-cedar-sidecar.platform.svc.cluster.local:8080"
+              value: "http://platform-cedar-sidecar.platform.svc.cluster.local:80"
             - name: WEBHOOK_SECRET
               valueFrom:
                 secretKeyRef:
