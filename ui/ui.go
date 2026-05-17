@@ -25,11 +25,12 @@ func NewHandler(coord coordinatorReader) *Handler {
 	fm := template.FuncMap{
 		"age":      fmtAge,
 		"missing":  missingEvidence,
-		"buildhref": func(jobPath string, buildNum int) template.URL {
-			return template.URL("/builds?key=" + url.QueryEscape(fmt.Sprintf("%s#%d", jobPath, buildNum)))
+		"buildhref": func(jobPath string, buildNum int) template.HTMLAttr {
+			key := url.QueryEscape(fmt.Sprintf("%s#%d", jobPath, buildNum))
+			return template.HTMLAttr(`href="/builds?key=` + key + `"`)
 		},
-		"keyhref": func(key string) template.URL {
-			return template.URL("/builds?key=" + url.QueryEscape(key))
+		"keyhref": func(key string) template.HTMLAttr {
+			return template.HTMLAttr(`href="/builds?key=` + url.QueryEscape(key) + `"`)
 		},
 		"css":    outcomeCSS,
 		"label":  outcomeLabel,
@@ -81,6 +82,9 @@ func (h *Handler) detail(w http.ResponseWriter, r *http.Request) {
 	if key == "" {
 		http.Redirect(w, r, "/", http.StatusSeeOther)
 		return
+	}
+	if decoded, err := url.QueryUnescape(key); err == nil {
+		key = decoded
 	}
 
 	decisions := h.coord.RecentDecisions()
@@ -223,7 +227,7 @@ code{font-family:ui-monospace,monospace;font-size:12px;color:#8b949e}
 <tr><th>Build</th><th>Branch</th><th>Evidence</th><th>Age</th></tr>
 {{range .Active}}
 <tr>
-<td class="job"><a href="{{buildhref .JobPath .BuildNumber}}">{{.JobPath}} #{{.BuildNumber}}</a></td>
+<td class="job"><a {{buildhref .JobPath .BuildNumber}}>{{.JobPath}} #{{.BuildNumber}}</a></td>
 <td class="muted">{{.Branch}}</td>
 <td class="pending">{{missing .}}</td>
 <td class="muted">{{age .ReceivedAt}}</td>
@@ -239,7 +243,7 @@ code{font-family:ui-monospace,monospace;font-size:12px;color:#8b949e}
 {{range .Decisions}}
 <tr>
 <td><span class="badge {{css .Outcome}}">{{label .Outcome}}</span></td>
-<td class="job"><a href="{{keyhref .Key}}">{{.JobPath}} #{{.BuildNumber}}</a></td>
+<td class="job"><a {{keyhref .Key}}>{{.JobPath}} #{{.BuildNumber}}</a></td>
 <td class="muted">{{.Branch}}</td>
 <td{{if ne .Outcome "ATTESTED"}} class="reason"{{end}}>{{.Reason}}</td>
 <td class="muted">{{age .DecidedAt}}</td>
