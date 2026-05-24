@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"strings"
 
 	"github.com/pboyd-oss/platform-attest-coordinator/coordinator"
 	"github.com/pboyd-oss/platform-attest-coordinator/ui"
@@ -26,12 +27,13 @@ func NewHandler(coord *coordinator.Coordinator, secret string, logger *log.Logge
 }
 
 func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	switch r.URL.Path {
-	case "/healthz":
+	switch {
+	case r.URL.Path == "/healthz":
 		w.WriteHeader(http.StatusOK)
-	case "/webhook/build-event":
+	case r.URL.Path == "/webhook/build-event":
 		h.handleBuildEvent(w, r)
-	case "/", "/builds":
+	case r.URL.Path == "/" || r.URL.Path == "/ui" ||
+		r.URL.Path == "/api/builds" || strings.HasPrefix(r.URL.Path, "/api/builds/"):
 		h.ui.ServeHTTP(w, r)
 	default:
 		http.NotFound(w, r)
