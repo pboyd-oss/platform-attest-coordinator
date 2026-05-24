@@ -103,6 +103,25 @@ func (c *HTTPCedarClient) Authorize(rec *BuildRecord, summary *AuditSummary) (bo
 }
 
 func buildEntities(rec *BuildRecord) []map[string]any {
+	declaredBuild, declaredTest := false, false
+	for _, s := range rec.Stages {
+		switch s.Name {
+		case "Build":
+			declaredBuild = true
+		case "Test":
+			declaredTest = true
+		}
+	}
+
+	pipelineAttrs := map[string]any{
+		"jobPath":        rec.JobPath,
+		"branch":         rec.Branch,
+		"triggeredBySCM": rec.SCMTriggered,
+		"hasAuditId":     rec.AuditID != "",
+		"declaredBuild":  declaredBuild,
+		"declaredTest":   declaredTest,
+	}
+
 	if rec.ServiceType == "platform-service" {
 		return []map[string]any{
 			{
@@ -111,15 +130,8 @@ func buildEntities(rec *BuildRecord) []map[string]any {
 				"parents": []any{},
 			},
 			{
-				"uid": map[string]any{"type": "TuxGrid::Pipeline", "id": rec.JobPath},
-				"attrs": map[string]any{
-					"jobPath":        rec.JobPath,
-					"branch":         rec.Branch,
-					"triggeredBySCM": rec.SCMTriggered,
-					"hasAuditId":     rec.AuditID != "",
-					"declaredBuild":  true,
-					"declaredTest":   true,
-				},
+				"uid":     map[string]any{"type": "TuxGrid::Pipeline", "id": rec.JobPath},
+				"attrs":   pipelineAttrs,
 				"parents": []any{map[string]any{"type": "TuxGrid::Namespace", "id": "platform"}},
 			},
 		}
@@ -140,15 +152,8 @@ func buildEntities(rec *BuildRecord) []map[string]any {
 			"parents": []any{map[string]any{"type": "TuxGrid::Namespace", "id": "development"}},
 		},
 		{
-			"uid": map[string]any{"type": "TuxGrid::Pipeline", "id": rec.JobPath},
-			"attrs": map[string]any{
-				"jobPath":        rec.JobPath,
-				"branch":         rec.Branch,
-				"triggeredBySCM": rec.SCMTriggered,
-				"hasAuditId":     rec.AuditID != "",
-				"declaredBuild":  true,
-				"declaredTest":   true,
-			},
+			"uid":     map[string]any{"type": "TuxGrid::Pipeline", "id": rec.JobPath},
+			"attrs":   pipelineAttrs,
 			"parents": []any{map[string]any{"type": "TuxGrid::Team", "id": rec.TeamSlug}},
 		},
 	}
