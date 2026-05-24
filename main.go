@@ -17,7 +17,7 @@ func main() {
 	jenkinsToken := mustEnv("JENKINS_TOKEN")
 
 	auditURL := envOrDefault("AUDIT_SERVICE_URL", "http://platform-audit-service.platform.svc.cluster.local:8080")
-	cedarURL := envOrDefault("CEDAR_SERVICE_URL", "http://platform-cedar-sidecar.platform.svc.cluster.local:8080")
+	cedarURL := envOrDefault("CEDAR_SERVICE_URL", "http://platform-cedar-sidecar.platform.svc.cluster.local")
 	webhookSecret := os.Getenv("WEBHOOK_SECRET")
 	listenAddr := envOrDefault("LISTEN_ADDR", ":8080")
 
