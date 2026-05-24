@@ -258,48 +258,55 @@ func (c *Coordinator) tryAttest(key string) {
 		return
 	}
 	rec.Attested = true
+	snap := *rec // safe snapshot; all reads below use snap, not the shared pointer
 	c.mu.Unlock()
 
-	c.logf("all evidence collected for %s #%d — fetching audit summary", rec.JobPath, rec.BuildNumber)
+	c.logf("all evidence collected for %s #%d — fetching audit summary", snap.JobPath, snap.BuildNumber)
 
-	summary, err := c.audit.GetSummary(rec.AuditID)
+	summary, err := c.audit.GetSummary(snap.AuditID)
 	if err != nil {
-		c.logf("ERROR fetching audit summary for auditId=%s: %v — attestation blocked", rec.AuditID, err)
+		c.logf("ERROR fetching audit summary for auditId=%s: %v — attestation blocked", snap.AuditID, err)
 		c.mu.Lock()
-		rec.Attested = false
+		if mr, ok := c.records[key]; ok {
+			mr.Attested = false
+		}
 		c.mu.Unlock()
 		return
 	}
 
-	allowed, reason, err := c.cedar.Authorize(rec, summary)
+	allowed, reason, err := c.cedar.Authorize(&snap, summary)
 	if err != nil {
-		c.logf("ERROR calling Cedar for %s #%d: %v — attestation blocked", rec.JobPath, rec.BuildNumber, err)
+		c.logf("ERROR calling Cedar for %s #%d: %v — attestation blocked", snap.JobPath, snap.BuildNumber, err)
 		c.mu.Lock()
-		rec.Attested = false
+		if mr, ok := c.records[key]; ok {
+			mr.Attested = false
+		}
 		c.mu.Unlock()
 		return
 	}
 	if !allowed {
-		c.logf("Cedar DENIED attestation for %s #%d: %s", rec.JobPath, rec.BuildNumber, reason)
-		c.recordDecision(rec, OutcomeCedarDeny, reason)
+		c.logf("Cedar DENIED attestation for %s #%d: %s", snap.JobPath, snap.BuildNumber, reason)
+		c.recordDecision(&snap, OutcomeCedarDeny, reason)
 		c.mu.Lock()
 		delete(c.records, key)
 		c.mu.Unlock()
 		return
 	}
 
-	attestJob := attestJobPath(rec)
-	attestParams := buildAttestParams(rec, summary)
+	attestJob := attestJobPath(&snap)
+	attestParams := buildAttestParams(&snap, summary)
 	if err := c.jenkins.TriggerBuild(attestJob, attestParams); err != nil {
-		c.logf("ERROR scheduling attest job %s for %s #%d: %v", attestJob, rec.JobPath, rec.BuildNumber, err)
+		c.logf("ERROR scheduling attest job %s for %s #%d: %v", attestJob, snap.JobPath, snap.BuildNumber, err)
 		c.mu.Lock()
-		rec.Attested = false
+		if mr, ok := c.records[key]; ok {
+			mr.Attested = false
+		}
 		c.mu.Unlock()
 		return
 	}
 
-	c.recordDecision(rec, OutcomeAttested, "")
-	c.logf("attestation scheduled: %s for %s #%d | auditId=%s", attestJob, rec.JobPath, rec.BuildNumber, rec.AuditID)
+	c.recordDecision(&snap, OutcomeAttested, "")
+	c.logf("attestation scheduled: %s for %s #%d | auditId=%s", attestJob, snap.JobPath, snap.BuildNumber, snap.AuditID)
 	c.mu.Lock()
 	delete(c.records, key)
 	c.mu.Unlock()
