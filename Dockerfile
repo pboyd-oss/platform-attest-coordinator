@@ -1,4 +1,4 @@
-FROM harbor.tuxgrid.com/docker.io/golang:1.24-alpine AS build
+FROM harbor.tuxgrid.com/docker.io/golang:1.26-alpine AS build
 WORKDIR /src
 COPY go.mod .
 RUN go mod download
