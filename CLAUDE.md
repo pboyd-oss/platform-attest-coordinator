@@ -1,5 +1,9 @@
 # platform-attest-coordinator
 
+## Purpose
+
+The attest-coordinator is the external state machine that gates container image signing. It receives build-completion, scan, and source-scan callbacks from a Jenkins RunListener shim, collects the resulting evidence, queries the platform-audit-service for kernel-level anomaly counts, and calls Cedar (`platform-cedar`) for an authorization decision before scheduling the cosign attest job. It is the sole path through which a build earns a signed image: without its ALLOW decision no attestation exists and the token-service will refuse to issue AWS deployment credentials.
+
 External state machine that gates image signing. It replaces the decision logic that previously lived in `02-attest-build-listener.groovy` inside Jenkins.
 
 ## End-to-end container flow
