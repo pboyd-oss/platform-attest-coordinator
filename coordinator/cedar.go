@@ -64,6 +64,8 @@ func (c *HTTPCedarClient) Authorize(rec *BuildRecord, summary *AuditSummary) (bo
 		"hasUnpinnedLibraries":        hasUnpinned,
 		"customStepCount":             int64(rec.CustomStepCount),
 		"jenkinsfileApproved":         rec.JenkinsfileApproved,
+		"sandboxViolationCount":       summary.SandboxViolations,
+		"tetragonExecsObserved":       summary.ExecsObserved,
 	}
 
 	entities := buildEntities(rec)

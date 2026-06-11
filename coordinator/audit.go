@@ -47,7 +47,9 @@ func (a *HTTPAuditClient) GetSummary(auditID string) (*AuditSummary, error) {
 	digest := fmt.Sprintf("%x", hash)
 
 	var report struct {
-		AnomalyCount    int64 `json:"anomaly_count"`
+		TotalExecs            int64 `json:"total_execs"`
+		SandboxViolationCount int64 `json:"sandbox_violation_count"`
+		AnomalyCount          int64 `json:"anomaly_count"`
 		CorrelatedExecs []struct {
 			Anomaly   bool `json:"anomaly"`
 			TetragonEvent struct {
@@ -70,5 +72,7 @@ func (a *HTTPAuditClient) GetSummary(auditID string) (*AuditSummary, error) {
 		Digest:                 digest,
 		AnomalyCount:           report.AnomalyCount,
 		UnexpectedNetworkCount: unexpectedNetwork,
+		ExecsObserved:          report.TotalExecs,
+		SandboxViolations:      report.SandboxViolationCount,
 	}, nil
 }

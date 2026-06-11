@@ -79,4 +79,8 @@ type AuditSummary struct {
 	Digest                 string `json:"digest"`
 	AnomalyCount           int64  `json:"anomaly_count"`
 	UnexpectedNetworkCount int64  `json:"unexpected_network_count"`
+	// ExecsObserved=total Tetragon execs correlated (0 with a valid auditId = witness dark).
+	// SandboxViolations=GROOVY_DENY count from PlatformGroovyInterceptor.
+	ExecsObserved          int64  `json:"total_execs"`
+	SandboxViolations      int64  `json:"sandbox_violation_count"`
 }
