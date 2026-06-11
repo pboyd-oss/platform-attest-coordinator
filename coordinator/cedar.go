@@ -63,6 +63,7 @@ func (c *HTTPCedarClient) Authorize(rec *BuildRecord, summary *AuditSummary) (bo
 		"auditUnexpectedNetworkCount": summary.UnexpectedNetworkCount,
 		"hasUnpinnedLibraries":        hasUnpinned,
 		"customStepCount":             int64(rec.CustomStepCount),
+		"jenkinsfileApproved":         rec.JenkinsfileApproved,
 	}
 
 	entities := buildEntities(rec)

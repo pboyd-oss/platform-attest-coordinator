@@ -216,6 +216,7 @@ func (c *Coordinator) OnSourceScanComplete(p BuildEventPayload) {
 		rec.SourceScanJob = p.JobPath
 		rec.SourceScanBuild = p.BuildNumber
 		rec.SourceScanAt = time.Now()
+		rec.JenkinsfileApproved = p.JenkinsfileApproved
 	}
 	c.mu.Unlock()
 

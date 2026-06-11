@@ -24,6 +24,7 @@ type BuildEventPayload struct {
 	LibrarySteps  []string  `json:"librarySteps"`
 	CustomStepCount int     `json:"customStepCount"`
 	StrictPipeline  bool      `json:"strictPipeline"`
+	JenkinsfileApproved bool  `json:"jenkinsfileApproved"`
 }
 
 type Stage struct {
@@ -55,6 +56,7 @@ type BuildRecord struct {
 	LibrarySteps []string
 	CustomStepCount int
 	StrictPipeline  bool
+	JenkinsfileApproved bool
 
 	ServiceType string // "team" or "platform-service"
 	TeamSlug    string
