@@ -22,6 +22,8 @@ type BuildEventPayload struct {
 	Stages        []Stage   `json:"stages"`
 	Libraries     []Library `json:"libraries"`
 	LibrarySteps  []string  `json:"librarySteps"`
+	CustomStepCount int     `json:"customStepCount"`
+	StrictPipeline  bool      `json:"strictPipeline"`
 }
 
 type Stage struct {
@@ -51,6 +53,8 @@ type BuildRecord struct {
 	Stages       []Stage
 	Libraries    []Library
 	LibrarySteps []string
+	CustomStepCount int
+	StrictPipeline  bool
 
 	ServiceType string // "team" or "platform-service"
 	TeamSlug    string

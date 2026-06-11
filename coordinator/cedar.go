@@ -62,6 +62,7 @@ func (c *HTTPCedarClient) Authorize(rec *BuildRecord, summary *AuditSummary) (bo
 		"auditAnomalyCount":           summary.AnomalyCount,
 		"auditUnexpectedNetworkCount": summary.UnexpectedNetworkCount,
 		"hasUnpinnedLibraries":        hasUnpinned,
+		"customStepCount":             int64(rec.CustomStepCount),
 	}
 
 	entities := buildEntities(rec)
@@ -120,6 +121,7 @@ func buildEntities(rec *BuildRecord) []map[string]any {
 		"hasAuditId":     rec.AuditID != "",
 		"declaredBuild":  declaredBuild,
 		"declaredTest":   declaredTest,
+		"strictPipeline": rec.StrictPipeline,
 	}
 
 	if rec.ServiceType == "platform-service" {

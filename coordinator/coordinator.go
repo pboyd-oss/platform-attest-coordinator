@@ -358,6 +358,8 @@ func recordFromPayload(p BuildEventPayload) *BuildRecord {
 		Stages:       p.Stages,
 		Libraries:    p.Libraries,
 		LibrarySteps: p.LibrarySteps,
+		CustomStepCount: p.CustomStepCount,
+		StrictPipeline:  p.StrictPipeline,
 		ReceivedAt:   time.Now(),
 	}
 	parts := strings.Split(p.JobPath, "/")
