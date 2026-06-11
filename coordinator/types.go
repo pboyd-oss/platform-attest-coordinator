@@ -83,4 +83,7 @@ type AuditSummary struct {
 	// SandboxViolations=GROOVY_DENY count from PlatformGroovyInterceptor.
 	ExecsObserved          int64  `json:"total_execs"`
 	SandboxViolations      int64  `json:"sandbox_violation_count"`
+	// GroovyRuntimeCalls=GROOVY_RUNTIME events from PlatformGroovyRuntimeTracer; 0 with a
+	// real build = the tracer was off/bypassed/shadowed.
+	GroovyRuntimeCalls     int64  `json:"total_groovy_runtime_calls"`
 }

@@ -47,8 +47,9 @@ func (a *HTTPAuditClient) GetSummary(auditID string) (*AuditSummary, error) {
 	digest := fmt.Sprintf("%x", hash)
 
 	var report struct {
-		TotalExecs            int64 `json:"total_execs"`
-		SandboxViolationCount int64 `json:"sandbox_violation_count"`
+		TotalExecs              int64 `json:"total_execs"`
+		SandboxViolationCount   int64 `json:"sandbox_violation_count"`
+		TotalGroovyRuntimeCalls int64 `json:"total_groovy_runtime_calls"`
 		AnomalyCount          int64 `json:"anomaly_count"`
 		CorrelatedExecs []struct {
 			Anomaly   bool `json:"anomaly"`
@@ -74,5 +75,6 @@ func (a *HTTPAuditClient) GetSummary(auditID string) (*AuditSummary, error) {
 		UnexpectedNetworkCount: unexpectedNetwork,
 		ExecsObserved:          report.TotalExecs,
 		SandboxViolations:      report.SandboxViolationCount,
+		GroovyRuntimeCalls:     report.TotalGroovyRuntimeCalls,
 	}, nil
 }

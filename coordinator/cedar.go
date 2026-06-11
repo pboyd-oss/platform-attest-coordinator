@@ -66,6 +66,7 @@ func (c *HTTPCedarClient) Authorize(rec *BuildRecord, summary *AuditSummary) (bo
 		"jenkinsfileApproved":         rec.JenkinsfileApproved,
 		"sandboxViolationCount":       summary.SandboxViolations,
 		"tetragonExecsObserved":       summary.ExecsObserved,
+		"groovyRuntimeCalls":          summary.GroovyRuntimeCalls,
 	}
 
 	entities := buildEntities(rec)
