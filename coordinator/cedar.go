@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"os"
 	"regexp"
 	"strings"
 	"time"
@@ -15,13 +16,36 @@ var pinnedSHARe = regexp.MustCompile(`^[0-9a-f]{40}$`)
 type HTTPCedarClient struct {
 	url    string
 	client *http.Client
+	// expectedLibDigests = platform-controlled registry of library name -> approved SHA-256
+	// of its loaded code. The source of truth for the library-integrity gate; a build cannot
+	// influence it. Empty = gate off (opt-in, like strict).
+	expectedLibDigests map[string]string
 }
 
-func NewCedarClient(url string) *HTTPCedarClient {
+func NewCedarClient(url, libraryDigestsPath string) *HTTPCedarClient {
 	return &HTTPCedarClient{
-		url:    strings.TrimRight(url, "/"),
-		client: &http.Client{Timeout: 5 * time.Second},
+		url:                strings.TrimRight(url, "/"),
+		client:             &http.Client{Timeout: 5 * time.Second},
+		expectedLibDigests: loadLibraryDigests(libraryDigestsPath),
 	}
+}
+
+// loadLibraryDigests reads a JSON map {libraryName: expectedSha256} from a
+// platform-controlled file (e.g. a GitOps ConfigMap). Returns empty (gate disabled) if the
+// path is unset or unreadable — opt-in, so a missing mount does not brick all attestation.
+func loadLibraryDigests(path string) map[string]string {
+	if path == "" {
+		return map[string]string{}
+	}
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return map[string]string{}
+	}
+	m := map[string]string{}
+	if err := json.Unmarshal(data, &m); err != nil {
+		return map[string]string{}
+	}
+	return m
 }
 
 func (c *HTTPCedarClient) Authorize(rec *BuildRecord, summary *AuditSummary) (bool, string, error) {
@@ -49,6 +73,34 @@ func (c *HTTPCedarClient) Authorize(rec *BuildRecord, summary *AuditSummary) (bo
 		scanAgeSeconds = rec.ImageScanAgeMs / 1000
 	}
 
+	// Gate-critical attribution comes from the audit-service (independent classloader
+	// witness), NOT rec.* (the Jenkins shim's self-reported payload). A nil set marshals to
+	// JSON null and would error attest-gate's calledLibrarySteps.contains(...) evaluation;
+	// coalesce to an empty set so the gate fails CLOSED (no proven library steps => deny)
+	// when the witness did not compute them.
+	calledLibrarySteps := summary.CalledLibrarySteps
+	if calledLibrarySteps == nil {
+		calledLibrarySteps = []string{}
+	}
+
+	// Library-integrity: for every loaded library we hold an EXPECTED digest for, the digest
+	// the audit-service observed actually loading (a hash of the on-disk code — not the
+	// build's self-reported version) must be present AND match. A miss (drift, tampering, or
+	// no observed digest) increments the mismatch count. Libraries with no expected entry are
+	// not checked, so you pin only the ones that matter (e.g. jenkins-library).
+	libraryDigestMismatch := int64(0)
+	if len(c.expectedLibDigests) > 0 {
+		for _, lib := range rec.Libraries {
+			want, ok := c.expectedLibDigests[lib.Name]
+			if !ok {
+				continue
+			}
+			if got := summary.LibraryDigests[lib.Name]; got == "" || !strings.EqualFold(got, want) {
+				libraryDigestMismatch++
+			}
+		}
+	}
+
 	ctx := map[string]any{
 		"testsRun":                    int64(rec.JUnitTotal),
 		"testsFailed":                 int64(rec.JUnitFailed),
@@ -58,11 +110,13 @@ func (c *HTTPCedarClient) Authorize(rec *BuildRecord, summary *AuditSummary) (bo
 		"hasScanAttestation":          rec.ImageScanJob != "",
 		"scanAgeSeconds":              scanAgeSeconds,
 		"completedStages":             completedStages,
-		"calledLibrarySteps":          rec.LibrarySteps,
+		"calledLibrarySteps":          calledLibrarySteps,
 		"auditAnomalyCount":           summary.AnomalyCount,
 		"auditUnexpectedNetworkCount": summary.UnexpectedNetworkCount,
 		"hasUnpinnedLibraries":        hasUnpinned,
-		"customStepCount":             int64(rec.CustomStepCount),
+		"customStepCount":             summary.CustomStepCount,
+		"customSyscallSiteCount":      summary.CustomSyscallSiteCount,
+		"libraryDigestMismatchCount":  libraryDigestMismatch,
 		"jenkinsfileApproved":         rec.JenkinsfileApproved,
 		"sandboxViolationCount":       summary.SandboxViolations,
 		"tetragonExecsObserved":       summary.ExecsObserved,

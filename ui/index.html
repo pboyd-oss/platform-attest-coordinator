@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Platform Attest</title>
+<link rel="stylesheet" href="/suite.css">
+<style>
+/* Tokens, base reset, html/body, links, focus ring, scrollbar, and the suite
+   brand header now live in /suite.css. Only app-specific component CSS and
+   the JS-coupled functional header controls remain below. */
+
+/* ---- functional header controls (JS-coupled, app-specific) ---- */
+.header-nav{display:flex;align-items:center;gap:4px;flex:1}
+#back{
+  display:none;
+  align-items:center;
+  gap:6px;
+  cursor:pointer;
+  color:var(--muted);
+  font-size:12px;
+  padding:4px 8px;
+  border-radius:var(--radius-sm);
+  border:none;
+  background:none;
+  transition:color .12s,background .12s;
+  line-height:1;
+}
+#back:hover{color:var(--text);background:var(--raised)}
+#back svg{flex-shrink:0}
+.breadcrumb-sep{color:var(--border-hi);font-size:14px;padding:0 4px;user-select:none}
+#breadcrumb{
+  font-size:12px;
+  color:var(--muted);
+  font-family:var(--mono);
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  max-width:600px;
+}
+.header-refresh{
+  margin-left:auto;
+  display:flex;
+  align-items:center;
+  gap:6px;
+  font-size:11px;
+  color:var(--muted);
+}
+.refresh-dot{
+  width:6px;height:6px;
+  border-radius:50%;
+  background:var(--green);
+  animation:pulse 2s ease-in-out infinite;
+}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+.refresh-dot.off{background:var(--muted);animation:none}
+
+/* ---- layout ---- */
+main{padding:24px;max-width:1320px;margin:0 auto}
+
+/* ---- metric tiles ---- */
+.tiles{display:flex;gap:12px;margin-bottom:24px;flex-wrap:wrap}
+.tile{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  padding:14px 20px;
+  min-width:120px;
+  box-shadow:var(--shadow);
+}
+.tile-label{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:4px}
+.tile-val{font-size:24px;font-weight:700;color:var(--text);line-height:1.1;font-family:var(--mono);font-variant-numeric:tabular-nums}
+.tile-val.accent{color:var(--accent)}
+.tile-val.green{color:var(--green)}
+.tile-val.red{color:var(--red)}
+.tile-val.yellow{color:var(--yellow)}
+
+/* ---- section card ---- */
+.sec{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  margin-bottom:20px;
+  overflow:hidden;
+  box-shadow:var(--shadow);
+}
+.sec-head{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:11px 16px;
+  border-bottom:1px solid var(--border);
+  background:var(--raised);
+}
+.sec-title{
+  font-size:11px;
+  font-weight:600;
+  text-transform:uppercase;
+  letter-spacing:.07em;
+  color:var(--muted);
+}
+.sec-count{
+  font-size:11px;
+  color:var(--muted);
+  background:var(--border);
+  border-radius:99px;
+  padding:0 7px;
+  line-height:18px;
+}
+.sec-body{padding:0}
+
+/* ---- tables ---- */
+.tbl{width:100%;border-collapse:collapse}
+.tbl thead th{
+  text-align:left;
+  color:var(--muted);
+  padding:8px 14px;
+  font-size:10px;
+  font-weight:600;
+  text-transform:uppercase;
+  letter-spacing:.07em;
+  white-space:nowrap;
+  border-bottom:1px solid var(--border);
+  background:var(--raised);
+  position:sticky;
+  top:48px;
+}
+.tbl tbody td{
+  padding:9px 14px;
+  border-bottom:1px solid var(--border);
+  vertical-align:middle;
+  white-space:nowrap;
+}
+.tbl tbody tr:last-child td{border-bottom:none}
+.tbl tbody tr.clickable{cursor:pointer;transition:background .12s}
+.tbl tbody tr.clickable:hover td{background:var(--raised)}
+
+/* ---- inline table for detail views ---- */
+.info-tbl{width:100%;max-width:760px;border-collapse:collapse}
+.info-tbl td{
+  padding:8px 16px;
+  border-bottom:1px solid var(--border);
+  font-size:12px;
+  vertical-align:top;
+}
+.info-tbl tr:last-child td{border-bottom:none}
+.info-tbl td:first-child{
+  color:var(--muted);
+  width:140px;
+  font-size:11px;
+  font-weight:500;
+  text-transform:uppercase;
+  letter-spacing:.05em;
+  white-space:nowrap;
+}
+
+/* ---- detail metric strip ---- */
+.detail-metrics{
+  display:flex;
+  gap:0;
+  border-bottom:1px solid var(--border);
+}
+.d-metric{
+  flex:1;
+  padding:14px 18px;
+  border-right:1px solid var(--border);
+}
+.d-metric:last-child{border-right:none}
+.d-metric-label{
+  font-size:10px;
+  font-weight:600;
+  text-transform:uppercase;
+  letter-spacing:.07em;
+  color:var(--muted);
+  margin-bottom:3px;
+}
+.d-metric-val{
+  font-size:20px;
+  font-weight:700;
+  color:var(--text);
+  line-height:1.1;
+  font-family:var(--mono);
+  font-variant-numeric:tabular-nums;
+}
+.d-metric-val.red{color:var(--red)}
+.d-metric-val.green{color:var(--green)}
+
+/* ---- badges / pills ---- */
+/* status pill: 20px radius, leading 5px dot, suite semantic color sets */
+.pill{
+  display:inline-flex;
+  align-items:center;
+  gap:5px;
+  padding:2px 9px 2px 7px;
+  border-radius:20px;
+  font-size:11px;
+  font-weight:600;
+  letter-spacing:.01em;
+  line-height:18px;
+  white-space:nowrap;
+}
+.pill-dot{
+  width:5px;height:5px;
+  border-radius:50%;
+  flex-shrink:0;
+}
+.pill-permit,.pill-attested{background:var(--green-bg);color:var(--green)}
+.pill-permit .pill-dot,.pill-attested .pill-dot{background:var(--green)}
+.pill-deny,.pill-cedar-deny,.pill-scan-failed{background:var(--red-bg);color:var(--red)}
+.pill-deny .pill-dot,.pill-cedar-deny .pill-dot,.pill-scan-failed .pill-dot{background:var(--red)}
+.pill-refused{background:var(--yellow-bg);color:var(--yellow)}
+.pill-refused .pill-dot{background:var(--yellow)}
+.pill-pending{background:var(--blue-bg);color:var(--accent)}
+.pill-pending .pill-dot{background:var(--accent)}
+.pill-neutral{background:var(--raised);color:var(--muted)}
+.pill-neutral .pill-dot{background:var(--muted)}
+
+/* small square badge (junit pass/fail) */
+.badge{
+  display:inline-block;
+  padding:2px 7px;
+  border-radius:5px;
+  font-size:11px;
+  font-weight:500;
+  white-space:nowrap;
+}
+.badge-ok{background:var(--green-bg);color:var(--green)}
+.badge-fail{background:var(--red-bg);color:var(--red)}
+.badge-warn{background:var(--yellow-bg);color:var(--yellow)}
+.badge-neutral{background:var(--raised);color:var(--muted)}
+
+/* ---- reason box ---- */
+.reason-box{
+  margin:12px 16px 16px;
+  background:rgba(248,81,73,.06);
+  border:1px solid rgba(248,81,73,.2);
+  border-radius:var(--radius-sm);
+  padding:12px 14px;
+  font-family:var(--mono);
+  font-size:11.5px;
+  color:var(--red);
+  white-space:pre-wrap;
+  line-height:1.55;
+}
+
+/* ---- outcome display ---- */
+.outcome-wrap{padding:14px 16px 16px}
+.outcome-label{
+  font-size:10px;
+  font-weight:600;
+  text-transform:uppercase;
+  letter-spacing:.07em;
+  color:var(--muted);
+  margin-bottom:8px;
+}
+
+/* ---- evidence timeline ---- */
+.ev-tbl{width:100%;max-width:760px;border-collapse:collapse}
+.ev-tbl td{
+  padding:8px 16px;
+  border-bottom:1px solid var(--border);
+  font-size:12px;
+}
+.ev-tbl tr:last-child td{border-bottom:none}
+.ev-tbl td:first-child{
+  color:var(--muted);
+  font-size:11px;
+  font-weight:500;
+  text-transform:uppercase;
+  letter-spacing:.05em;
+  width:140px;
+  white-space:nowrap;
+}
+.ev-ok{color:var(--text)}
+.ev-wait{color:var(--muted);font-style:italic}
+.ev-mono{font-family:var(--mono);font-size:11px;color:var(--muted)}
+
+/* ---- detail sub-tables (stages, libraries) ---- */
+.sub-tbl{width:100%;border-collapse:collapse}
+.sub-tbl th{
+  text-align:left;
+  color:var(--muted);
+  padding:6px 16px;
+  font-size:10px;
+  font-weight:600;
+  text-transform:uppercase;
+  letter-spacing:.07em;
+  border-bottom:1px solid var(--border);
+  background:var(--raised);
+}
+.sub-tbl td{
+  padding:7px 16px;
+  border-bottom:1px solid var(--border);
+  font-size:12px;
+}
+.sub-tbl tr:last-child td{border-bottom:none}
+.sub-tbl tr:hover td{background:var(--raised)}
+.st-ok{color:var(--green)}
+.st-fail{color:var(--red)}
+.sha-ok{font-family:var(--mono);font-size:11px;color:var(--muted)}
+.sha-warn{font-family:var(--mono);font-size:11px;color:var(--yellow)}
+
+/* ---- typography helpers ---- */
+.mono{font-family:var(--mono);font-size:11.5px}
+.muted{color:var(--muted)}
+.job-folder{color:var(--muted);font-size:12px}
+.job-num{font-family:var(--mono);font-weight:600;font-size:12px;color:var(--text)}
+.branch-tag{
+  display:inline-block;
+  font-family:var(--mono);
+  font-size:10.5px;
+  background:var(--raised);
+  border:1px solid var(--border);
+  border-radius:4px;
+  padding:1px 6px;
+  color:var(--muted);
+  max-width:160px;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.commit-hash{
+  font-family:var(--mono);
+  font-size:11px;
+  color:var(--muted);
+}
+.reason-short{
+  color:var(--red);
+  font-size:12px;
+  max-width:340px;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.ev-pending-txt{color:var(--accent);font-size:12px}
+
+/* ---- empty / error states ---- */
+.empty-state{
+  padding:32px 24px;
+  text-align:center;
+  color:var(--muted);
+  font-size:12px;
+}
+.empty-icon{
+  font-size:28px;
+  margin-bottom:8px;
+  opacity:.35;
+}
+.err-state{padding:20px 24px;color:var(--red);font-size:12px}
+.loading-state{padding:32px 24px;text-align:center;color:var(--muted);font-size:12px}
+</style>
+</head>
+<body>
+<header class="suite-header">
+  <div class="suite-brand">
+    <div class="suite-mark">
+      <svg width="13" height="13" viewBox="0 0 13 13" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M6.5 1L11 3.5V9.5L6.5 12L2 9.5V3.5L6.5 1Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/>
+        <path d="M4.5 6.5L6 8L8.5 5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+    <span class="suite-wordmark">Platform <span class="accent">Attest</span></span>
+    <span class="suite-tag">/ tuxgrid</span>
+  </div>
+  <div class="suite-header-divider"></div>
+  <div class="header-nav">
+    <button id="back" aria-label="Back to builds list">
+      <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M8 2.5L4 6.5L8 10.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      builds
+    </button>
+    <span id="bcsep" class="breadcrumb-sep" style="display:none">&#47;</span>
+    <span id="breadcrumb"></span>
+  </div>
+  <div class="header-refresh" id="refresh-status">
+    <span class="refresh-dot off" id="refresh-dot"></span>
+    <span id="refresh-label">-</span>
+  </div>
+</header>
+<main id="app"><div class="loading-state">Loading&#8230;</div></main>
+<script>
+'use strict';
+var _refreshTimer = null;
+var _lastRefresh  = null;
+
+function setRefreshState(live) {
+  var dot   = document.getElementById('refresh-dot');
+  var label = document.getElementById('refresh-label');
+  if (live) {
+    dot.className   = 'refresh-dot';
+    label.textContent = 'live';
+  } else {
+    dot.className   = 'refresh-dot off';
+    label.textContent = 'paused';
+  }
+}
+
+function route() {
+  var p = new URLSearchParams(location.search).get('build');
+  if (p) { clearRefresh(); showBuild(p); }
+  else    { showList(); }
+}
+
+function clearRefresh() {
+  if (_refreshTimer) { clearInterval(_refreshTimer); _refreshTimer = null; }
+  setRefreshState(false);
+}
+
+document.getElementById('back').addEventListener('click', function() {
+  history.pushState(null, '', '/');
+  route();
+});
+window.addEventListener('popstate', function() { route(); });
+route();
+
+async function showList() {
+  document.getElementById('back').style.display = 'none';
+  document.getElementById('bcsep').style.display = 'none';
+  document.getElementById('breadcrumb').textContent = '';
+  await renderList();
+  clearRefresh();
+  _refreshTimer = setInterval(renderList, 10000);
+  setRefreshState(true);
+}
+
+async function renderList() {
+  var app = document.getElementById('app');
+  try {
+    var d = await fetch('/api/builds').then(function(r) { return r.json(); });
+    _lastRefresh = Date.now();
+
+    var permitCount = 0; var denyCount = 0;
+    for (var i = 0; i < d.decisions.length; i++) {
+      var o = d.decisions[i].outcome;
+      if (o === 'ATTESTED') permitCount++;
+      else denyCount++;
+    }
+
+    var h = '';
+
+    /* metric tiles */
+    h += '<div class="tiles">';
+    h += tile('Active Builds', String(d.active.length), d.active.length > 0 ? 'accent' : '');
+    h += tile('Recent Decisions', String(d.decisions.length), '');
+    h += tile('Permitted', String(permitCount), permitCount > 0 ? 'green' : '');
+    h += tile('Denied', String(denyCount), denyCount > 0 ? 'red' : '');
+    h += '</div>';
+
+    /* active builds */
+    h += '<div class="sec">';
+    h += '<div class="sec-head">';
+    h += '<span class="sec-title">Active Builds</span>';
+    h += '<span class="sec-count">' + d.active.length + '</span>';
+    h += '</div>';
+    h += '<div class="sec-body">';
+    if (!d.active.length) {
+      h += '<div class="empty-state"><div class="empty-icon">&#9744;</div>No active builds</div>';
+    } else {
+      h += '<table class="tbl"><thead><tr>';
+      h += '<th>Build</th><th>Branch</th><th>Commit</th><th>Evidence</th><th>JUnit</th><th>Age</th>';
+      h += '</tr></thead><tbody>';
+      for (var i = 0; i < d.active.length; i++) {
+        var b = d.active[i];
+        var ev = evidenceSummary(b);
+        var evPill = b.imageScanJob && b.sourceScanJob
+          ? '<span class="pill pill-permit"><span class="pill-dot"></span>ready</span>'
+          : '<span class="pill pill-pending"><span class="pill-dot"></span>' + esc(ev) + '</span>';
+        var junitCell = b.junitFailed > 0
+          ? '<span class="badge badge-fail">' + b.junitFailed + ' failed / ' + b.junitTotal + '</span>'
+          : (b.junitTotal > 0 ? '<span class="badge badge-ok">' + b.junitTotal + ' passed</span>' : '<span class="muted">-</span>');
+        var shortCommit = b.gitCommit ? '<span class="commit-hash">' + esc(b.gitCommit.substring(0,8)) + '</span>' : '<span class="muted">-</span>';
+        h += '<tr class="clickable" onclick="nav(' + JSON.stringify(b.key) + ')">';
+        h += '<td><span class="job-folder">' + jobFolder(b.jobPath) + '</span><span class="job-num">#' + b.buildNumber + '</span></td>';
+        h += '<td><span class="branch-tag">' + esc(b.branch) + '</span></td>';
+        h += '<td>' + shortCommit + '</td>';
+        h += '<td>' + evPill + '</td>';
+        h += '<td>' + junitCell + '</td>';
+        h += '<td class="muted" style="font-size:11px">' + age(b.receivedAt) + '</td>';
+        h += '</tr>';
+      }
+      h += '</tbody></table>';
+    }
+    h += '</div></div>';
+
+    /* recent decisions */
+    h += '<div class="sec">';
+    h += '<div class="sec-head">';
+    h += '<span class="sec-title">Recent Decisions</span>';
+    h += '<span class="sec-count">' + d.decisions.length + '</span>';
+    h += '</div>';
+    h += '<div class="sec-body">';
+    if (!d.decisions.length) {
+      h += '<div class="empty-state"><div class="empty-icon">&#9744;</div>No decisions yet</div>';
+    } else {
+      h += '<table class="tbl"><thead><tr>';
+      h += '<th>Outcome</th><th>Build</th><th>Branch</th><th>Commit</th><th>Reason</th><th>Decided</th>';
+      h += '</tr></thead><tbody>';
+      for (var i = 0; i < d.decisions.length; i++) {
+        var dec = d.decisions[i];
+        var op  = outcomePill(dec.outcome);
+        var reasonCell = dec.reason
+          ? '<span class="reason-short">' + esc(dec.reason.substring(0, 80)) + (dec.reason.length > 80 ? '...' : '') + '</span>'
+          : '<span class="muted">-</span>';
+        var shortCommitD = dec.gitCommit ? '<span class="commit-hash">' + esc(dec.gitCommit.substring(0,8)) + '</span>' : '<span class="muted">-</span>';
+        h += '<tr class="clickable" onclick="nav(' + JSON.stringify(dec.key) + ')">';
+        h += '<td>' + op + '</td>';
+        h += '<td><span class="job-folder">' + jobFolder(dec.jobPath) + '</span><span class="job-num">#' + dec.buildNumber + '</span></td>';
+        h += '<td><span class="branch-tag">' + esc(dec.branch) + '</span></td>';
+        h += '<td>' + shortCommitD + '</td>';
+        h += '<td>' + reasonCell + '</td>';
+        h += '<td class="muted" style="font-size:11px">' + age(dec.decidedAt) + '</td>';
+        h += '</tr>';
+      }
+      h += '</tbody></table>';
+    }
+    h += '</div></div>';
+
+    app.innerHTML = h;
+  } catch(e) {
+    app.innerHTML = '<div class="err-state">Failed to load: ' + esc(e.message) + '</div>';
+  }
+}
+
+function nav(key) {
+  clearRefresh();
+  history.pushState(null, '', '/?build=' + encodeURIComponent(key));
+  showBuild(key);
+}
+
+async function showBuild(key) {
+  var back = document.getElementById('back');
+  var bcsep = document.getElementById('bcsep');
+  var bc = document.getElementById('breadcrumb');
+  back.style.display = '';
+  bcsep.style.display = '';
+  bc.textContent = key;
+  var app = document.getElementById('app');
+  app.innerHTML = '<div class="loading-state">Loading&#8230;</div>';
+  try {
+    var d = await fetch('/api/builds/' + encodeURIComponent(key)).then(function(r) {
+      if (!r.ok) throw new Error(r.status === 404 ? 'Build not found' : r.statusText);
+      return r.json();
+    });
+    if (d.decision) { app.innerHTML = renderDecisionDetail(d.decision); }
+    else if (d.active) { app.innerHTML = renderActiveDetail(d.active); }
+  } catch(e) {
+    app.innerHTML = '<div class="err-state">' + esc(e.message) + '</div>';
+  }
+}
+
+function renderDecisionDetail(d) {
+  var cov    = d.lineCoverage >= 0 ? d.lineCoverage.toFixed(1) + '%' : '-';
+  var covCls = d.lineCoverage < 0 ? '' : (d.lineCoverage < d.covThreshold ? ' red' : ' green');
+  var junitFail = d.junitFailed > 0 ? '<span class="d-metric-val red">' + d.junitFailed + ' failed</span>' : '';
+  var junitVal  = d.junitTotal + ' tests' + (junitFail ? ', ' : '');
+
+  var h = '';
+  /* top metric strip */
+  h += '<div class="sec" style="margin-bottom:20px">';
+  h += '<div class="detail-metrics">';
+  h += dMetric('JUnit', junitVal, '') + (junitFail ? '<div class="d-metric" style="flex:0;padding:14px 0 14px 0;border-right:1px solid var(--border)"><div class="d-metric-label">&nbsp;</div>' + junitFail + '</div>' : '');
+  h += dMetric('Coverage', cov, covCls);
+  h += dMetric('Stages', String(d.stages ? d.stages.length : 0), '');
+  h += dMetric('Libraries', String(d.libraries ? d.libraries.length : 0), '');
+  h += '</div>';
+
+  /* outcome */
+  h += '<div class="outcome-wrap">';
+  h += '<div class="outcome-label">Decision</div>';
+  h += outcomePill(d.outcome);
+  h += '</div>';
+  if (d.reason) h += '<div class="reason-box">' + esc(d.reason) + '</div>';
+  h += '</div>';
+
+  /* evidence timeline */
+  h += secWrap('Evidence Timeline',
+    '<table class="ev-tbl">' +
+    evRow('Build received', fmtTime(d.receivedAt), true) +
+    evRow('Image scan',     d.imageScanAt  ? fmtTime(d.imageScanAt)  : null, !!d.imageScanAt) +
+    evRow('Source scan',    d.sourceScanAt ? fmtTime(d.sourceScanAt) : null, !!d.sourceScanAt) +
+    evRow('Decided',        fmtTime(d.decidedAt), true) +
+    '</table>');
+
+  /* build info */
+  h += secWrap('Build Info',
+    '<table class="info-tbl">' +
+    infoRow('Job',      '<span class="mono">' + esc(d.jobPath)    + '</span>') +
+    infoRow('Build',    '<span class="mono">#' + d.buildNumber    + '</span>') +
+    infoRow('Branch',   '<span class="branch-tag">' + esc(d.branch) + '</span>') +
+    infoRow('Commit',   '<span class="mono">' + esc(d.gitCommit)  + '</span>') +
+    infoRow('Image',    '<span class="mono">' + esc(d.imageRef)   + '</span>') +
+    infoRow('Audit ID', '<span class="mono">' + esc(d.auditId)    + '</span>') +
+    '</table>');
+
+  h += stagesSection(d.stages);
+  h += librariesSection(d.libraries);
+  return h;
+}
+
+function renderActiveDetail(b) {
+  var cov    = b.lineCoverage >= 0 ? b.lineCoverage.toFixed(1) + '%' : '-';
+  var covCls = b.lineCoverage < 0 ? '' : (b.lineCoverage < b.covThreshold ? ' red' : ' green');
+  var junitFail = b.junitFailed > 0 ? '<span class="d-metric-val red">' + b.junitFailed + ' failed</span>' : '';
+  var junitVal  = b.junitTotal + ' tests' + (junitFail ? ', ' : '');
+
+  var h = '';
+  h += '<div class="sec" style="margin-bottom:20px">';
+  h += '<div class="detail-metrics">';
+  h += dMetric('JUnit', junitVal, '') + (junitFail ? '<div class="d-metric" style="flex:0;padding:14px 0 14px 0;border-right:1px solid var(--border)"><div class="d-metric-label">&nbsp;</div>' + junitFail + '</div>' : '');
+  h += dMetric('Coverage', cov, covCls);
+  h += dMetric('Stages', String(b.stages ? b.stages.length : 0), '');
+  h += dMetric('Libraries', String(b.libraries ? b.libraries.length : 0), '');
+  h += '</div>';
+  h += '<div class="outcome-wrap">';
+  h += '<div class="outcome-label">Status</div>';
+  h += '<span class="pill pill-pending"><span class="pill-dot"></span>collecting evidence</span>';
+  h += '</div>';
+  h += '</div>';
+
+  /* evidence */
+  var imgVal  = b.imageScanJob  ? (fmtTime(b.imageScanAt)  + ' &mdash; <span class="mono">' + esc(b.imageScanJob)  + ' #' + b.imageScanBuild  + '</span>') : null;
+  var srcVal  = b.sourceScanJob ? (fmtTime(b.sourceScanAt) + ' &mdash; <span class="mono">' + esc(b.sourceScanJob) + ' #' + b.sourceScanBuild + '</span>') : null;
+  h += secWrap('Evidence',
+    '<table class="ev-tbl">' +
+    evRow('Build received', fmtTime(b.receivedAt), true) +
+    evRow('Image scan',     imgVal, !!b.imageScanJob) +
+    evRow('Source scan',    srcVal, !!b.sourceScanJob) +
+    '</table>');
+
+  /* build info */
+  h += secWrap('Build Info',
+    '<table class="info-tbl">' +
+    infoRow('Job',      '<span class="mono">' + esc(b.jobPath)    + '</span>') +
+    infoRow('Build',    '<span class="mono">#' + b.buildNumber    + '</span>') +
+    infoRow('Branch',   '<span class="branch-tag">' + esc(b.branch) + '</span>') +
+    infoRow('Commit',   '<span class="mono">' + esc(b.gitCommit)  + '</span>') +
+    infoRow('Image',    '<span class="mono">' + esc(b.imageRef)   + '</span>') +
+    infoRow('Audit ID', '<span class="mono">' + esc(b.auditId)    + '</span>') +
+    '</table>');
+
+  h += stagesSection(b.stages);
+  h += librariesSection(b.libraries);
+  return h;
+}
+
+function stagesSection(stages) {
+  if (!stages || !stages.length) return '';
+  var rows = '';
+  for (var i = 0; i < stages.length; i++) {
+    var s   = stages[i];
+    var cls = s.Status === 'SUCCESS' ? 'st-ok' : 'st-fail';
+    rows += '<tr><td>' + esc(s.Name) + '</td><td class="' + cls + '">' + esc(s.Status) + '</td></tr>';
+  }
+  return secWrap('Stages',
+    '<table class="sub-tbl"><thead><tr><th>Name</th><th>Status</th></tr></thead><tbody>' +
+    rows + '</tbody></table>');
+}
+
+function librariesSection(libs) {
+  if (!libs || !libs.length) return '';
+  var rows = '';
+  for (var i = 0; i < libs.length; i++) {
+    var l      = libs[i];
+    var isSHA  = /^[0-9a-f]{40}$/i.test(l.SHA);
+    var cls    = isSHA ? 'sha-ok' : 'sha-warn';
+    var val    = isSHA ? l.SHA.substring(0, 12) + '...' : l.SHA + (isSHA ? '' : ' &#9888;');
+    rows += '<tr><td>' + esc(l.Name) + '</td><td class="' + cls + '" title="' + esc(l.SHA) + '">' + val + '</td></tr>';
+  }
+  return secWrap('Libraries',
+    '<table class="sub-tbl"><thead><tr><th>Name</th><th>SHA / Ref</th></tr></thead><tbody>' +
+    rows + '</tbody></table>');
+}
+
+/* ---- helper builders ---- */
+function tile(label, val, colorCls) {
+  return '<div class="tile"><div class="tile-label">' + esc(label) + '</div>'
+       + '<div class="tile-val' + (colorCls ? ' ' + colorCls : '') + '">' + esc(val) + '</div></div>';
+}
+function dMetric(label, valHTML, extraCls) {
+  return '<div class="d-metric"><div class="d-metric-label">' + esc(label) + '</div>'
+       + '<div class="d-metric-val' + extraCls + '">' + valHTML + '</div></div>';
+}
+function secWrap(title, bodyHTML) {
+  return '<div class="sec"><div class="sec-head"><span class="sec-title">' + esc(title) + '</span></div>'
+       + '<div class="sec-body">' + bodyHTML + '</div></div>';
+}
+function evRow(label, val, ok) {
+  if (!val) {
+    return '<tr><td>' + esc(label) + '</td><td class="ev-wait">waiting...</td></tr>';
+  }
+  return '<tr><td>' + esc(label) + '</td><td class="ev-ok">' + val + '</td></tr>';
+}
+function infoRow(label, valHTML) {
+  return '<tr><td>' + esc(label) + '</td><td>' + valHTML + '</td></tr>';
+}
+function outcomePill(o) {
+  var map = {
+    'ATTESTED':    ['pill-attested',    'PERMIT'],
+    'CEDAR_DENY':  ['pill-cedar-deny',  'DENY'],
+    'SCAN_FAILED': ['pill-scan-failed', 'SCAN FAILED'],
+    'REFUSED':     ['pill-refused',     'REFUSED']
+  };
+  var entry  = map[o] || ['pill-neutral', o || 'UNKNOWN'];
+  var cls    = entry[0];
+  var label  = entry[1];
+  return '<span class="pill ' + cls + '"><span class="pill-dot"></span>' + esc(label) + '</span>';
+}
+function evidenceSummary(b) {
+  var m = [];
+  if (!b.imageScanJob)  m.push('image scan');
+  if (!b.sourceScanJob) m.push('source scan');
+  return m.length ? 'awaiting: ' + m.join(', ') : 'all evidence collected';
+}
+function jobFolder(path) {
+  return esc(path) + '/';
+}
+function age(ts) {
+  if (!ts) return '-';
+  var s = (Date.now() - new Date(ts)) / 1000;
+  if (s < 60)   return Math.floor(s) + 's';
+  if (s < 3600) return Math.floor(s / 60) + 'm ' + Math.floor(s % 60) + 's';
+  return Math.floor(s / 3600) + 'h ' + Math.floor((s % 3600) / 60) + 'm';
+}
+function fmtTime(ts) {
+  if (!ts) return '-';
+  return new Date(ts).toISOString().replace('T', ' ').replace('Z', '').split('.')[0];
+}
+function esc(s) {
+  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+</script>
+</body>
+</html>

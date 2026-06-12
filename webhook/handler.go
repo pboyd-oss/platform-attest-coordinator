@@ -32,7 +32,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	case r.URL.Path == "/webhook/build-event":
 		h.handleBuildEvent(w, r)
-	case r.URL.Path == "/" || r.URL.Path == "/ui" ||
+	case r.URL.Path == "/" || r.URL.Path == "/ui" || r.URL.Path == "/suite.css" ||
 		r.URL.Path == "/api/builds" || strings.HasPrefix(r.URL.Path, "/api/builds/"):
 		h.ui.ServeHTTP(w, r)
 	default:

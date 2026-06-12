@@ -21,8 +21,12 @@ func main() {
 	webhookSecret := os.Getenv("WEBHOOK_SECRET")
 	listenAddr := envOrDefault("LISTEN_ADDR", ":8080")
 
+	// Optional platform-controlled registry of expected library code digests (a GitOps
+	// ConfigMap mounted into the pod). Unset = the library-integrity gate is off.
+	libraryDigestsPath := os.Getenv("LIBRARY_DIGESTS_PATH")
+
 	jenkins := coordinator.NewJenkinsClient(jenkinsURL, jenkinsUser, jenkinsToken)
-	cedar := coordinator.NewCedarClient(cedarURL)
+	cedar := coordinator.NewCedarClient(cedarURL, libraryDigestsPath)
 	audit := coordinator.NewAuditClient(auditURL)
 
 	coord := coordinator.New(jenkins, cedar, audit, logger)

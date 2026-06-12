@@ -50,9 +50,15 @@ func (a *HTTPAuditClient) GetSummary(auditID string) (*AuditSummary, error) {
 		TotalExecs              int64 `json:"total_execs"`
 		SandboxViolationCount   int64 `json:"sandbox_violation_count"`
 		TotalGroovyRuntimeCalls int64 `json:"total_groovy_runtime_calls"`
-		AnomalyCount          int64 `json:"anomaly_count"`
-		CorrelatedExecs []struct {
-			Anomaly   bool `json:"anomaly"`
+		AnomalyCount            int64 `json:"anomaly_count"`
+		// Independent classloader-provenance attribution (audit-service computes these from
+		// the raw step events — the gate keys on these, not the Jenkins shim's self-report).
+		CalledLibrarySteps     []string          `json:"called_library_steps"`
+		CustomStepCount        int64             `json:"custom_step_count"`
+		CustomSyscallSiteCount int64             `json:"custom_syscall_site_count"`
+		LibraryDigests         map[string]string `json:"library_digests"`
+		CorrelatedExecs        []struct {
+			Anomaly       bool `json:"anomaly"`
 			TetragonEvent struct {
 				EventType string `json:"event_type"`
 			} `json:"tetragon_event"`
@@ -76,5 +82,9 @@ func (a *HTTPAuditClient) GetSummary(auditID string) (*AuditSummary, error) {
 		ExecsObserved:          report.TotalExecs,
 		SandboxViolations:      report.SandboxViolationCount,
 		GroovyRuntimeCalls:     report.TotalGroovyRuntimeCalls,
+		CalledLibrarySteps:     report.CalledLibrarySteps,
+		CustomStepCount:        report.CustomStepCount,
+		CustomSyscallSiteCount: report.CustomSyscallSiteCount,
+		LibraryDigests:         report.LibraryDigests,
 	}, nil
 }
