@@ -5,5 +5,6 @@ resources:
   - service.yaml
   - deployment.yaml
   - httproute.yaml
+  - library-digests-configmap.yaml
   - attest-webhook-sealedsecret.yaml
   - jenkins-operator-credentials-sealedsecret.yaml

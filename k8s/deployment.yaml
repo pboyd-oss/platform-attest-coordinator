@@ -54,6 +54,14 @@ spec:
                 secretKeyRef:
                   name: attest-webhook-secret
                   key: token
+            # Activates the library-integrity gate: expected library code digests, mounted
+            # from the library-digests ConfigMap. Unset this (or remove the mount) to disable.
+            - name: LIBRARY_DIGESTS_PATH
+              value: "/config/library-digests.json"
+          volumeMounts:
+            - name: library-digests
+              mountPath: /config
+              readOnly: true
           livenessProbe:
             httpGet:
               path: /healthz
@@ -78,3 +86,7 @@ spec:
             readOnlyRootFilesystem: true
             capabilities:
               drop: [ALL]
+      volumes:
+        - name: library-digests
+          configMap:
+            name: library-digests

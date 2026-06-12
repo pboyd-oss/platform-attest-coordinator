@@ -1,0 +1,27 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: library-digests
+  namespace: platform
+  labels:
+    app: platform-attest-coordinator
+  annotations:
+    # The library-integrity Cedar gate compares each trusted library's ACTUALLY-LOADED
+    # code digest (audit-service `library_digests`, a SHA-256 of the on-disk *.groovy the
+    # PlatformAuditGraphListener observed) against the expected value below. A mismatch (or
+    # a missing observed digest) for a pinned library => libraryDigestMismatchCount > 0 =>
+    # Attest denied for strict pipelines (strict is the shim default).
+    #
+    # REGENERATE with tools/library-digest.py whenever jenkins-library changes: it is loaded
+    # at defaultVersion "main" (a MOVING branch), so this value is the digest of main at a
+    # point in time and goes STALE on every jenkins-library commit. A stale value denies all
+    # strict builds (fail-closed) until updated -- ideally jenkins-library CI regenerates it.
+    #
+    # VALIDATE before trusting: confirm this equals the `library_digests["jenkins-library"]`
+    # in a known-good build's audit summary (the in-pod checkout is the source of truth).
+    platform.tuxgrid.com/jenkins-library-ref: "main@9125d4ceb6a8852f9674881aa3af61f45c2732af"
+data:
+  library-digests.json: |
+    {
+      "jenkins-library": "598fa2e85572cfdcaaa0038aa5cca452d59f98d64968e7a1d501f8dc42676f06"
+    }
