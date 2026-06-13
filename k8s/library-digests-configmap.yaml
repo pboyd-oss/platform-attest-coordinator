@@ -23,5 +23,5 @@ metadata:
 data:
   library-digests.json: |
     {
-      "jenkins-library": "211fad4029eefe7d1342b1b121d405a49ba1c110682f3dd054e4161016bbd606"
+      "jenkins-library": "cbf0fa75756f5adccaa1a8d98fa2195ea2b8bf4ccd63c4a2513cb6edf774ca30"
     }
