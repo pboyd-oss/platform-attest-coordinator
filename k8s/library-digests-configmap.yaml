@@ -19,9 +19,9 @@ metadata:
     #
     # VALIDATE before trusting: confirm this equals the `library_digests["jenkins-library"]`
     # in a known-good build's audit summary (the in-pod checkout is the source of truth).
-    platform.tuxgrid.com/jenkins-library-ref: "main@9125d4ceb6a8852f9674881aa3af61f45c2732af"
+    platform.tuxgrid.com/jenkins-library-ref: "main@3a822c3 (regenerate with tools/library-digest.py on every jenkins-library change)"
 data:
   library-digests.json: |
     {
-      "jenkins-library": "598fa2e85572cfdcaaa0038aa5cca452d59f98d64968e7a1d501f8dc42676f06"
+      "jenkins-library": "211fad4029eefe7d1342b1b121d405a49ba1c110682f3dd054e4161016bbd606"
     }
